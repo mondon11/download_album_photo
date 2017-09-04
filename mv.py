@@ -126,6 +126,7 @@ if __name__=='__main__':
             if count>10:
                 time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                 fl.write(time_now+' : '+url_base+'\n')
+                fl.flush()
                 break
             try:
                 url_list=get_area_list(url_base)
@@ -143,6 +144,7 @@ if __name__=='__main__':
                 if count>10:
                     time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                     fl.write(time_now+' : '+url_list[i]+'\n')
+                    fl.flush()
                     break
                 try:
                     if get_noPicMode(url_list[i]):
@@ -165,6 +167,7 @@ if __name__=='__main__':
                 if count>10:
                     time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                     fl.write(time_now+' : '+url+'\n')
+                    fl.flush()
                     break
                 try:
                     page=get_page_num(url)
@@ -183,6 +186,7 @@ if __name__=='__main__':
                     if count>10:
                         time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                         fl.write(time_now+' : '+url+'\n')
+                        fl.flush()
                         break
                     try:
                         url_list_1=get_album_list(url)
@@ -200,6 +204,7 @@ if __name__=='__main__':
                         if count>10:
                             time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                             fl.write(time_now+' : '+url_list_1[k]+'\n')
+                            fl.flush()
                             break
                         try:
                             url_list_2,album_name=get_pic_list(url_list_1[k])
@@ -224,6 +229,7 @@ if __name__=='__main__':
                             if count>10:
                                 time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
                                 fl.write(time_now+' : '+url_list_2[m]+'\n')
+                                fl.flush()
                                 break
                             try:
                                 download_pic(url_list_2[m],album_name,m+1,local_path)
@@ -234,5 +240,6 @@ if __name__=='__main__':
                         download_pic(url_list_2[m],album_name,m+1,local_path)
                         '''
                         print m+1
+        fl.close()
 
 
