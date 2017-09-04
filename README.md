@@ -1,1 +1,2 @@
-# download_album_photo
+# 利用python requests和bs4遍历下载某网站所有写真集
+主要利用了requests和bs4这两个库：requests负责连接网络，处理http协议；bs4负责将网页变成结构化数据，方便爬取。
