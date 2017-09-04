@@ -5,6 +5,7 @@ from bs4 import BeautifulSoup
 import re
 import os
 import time
+import threading
 
 '''
 获取不同杂志的入口网址列表
@@ -114,7 +115,7 @@ def download_pic(url,album_name,pic_num,local_path):
     如果本地未存在该写真集，下载。
 '''
 if __name__=='__main__':
-    local_path='c:/Users/mondon/Desktop/mv/' #自定义保存路径
+    local_path='c:/Users/mondon/Desktop/test_mv/' #自定义保存路径
     url_base='https://www.aisinei.com/' #网站基址
     log='error_log.txt' #记录访问时抛错的网址
     conn=requests.session() #创建session 传递cookie
@@ -222,7 +223,9 @@ if __name__=='__main__':
                     else:
                         print ' '+album_name.encode('utf-8')+' 已存在'
                         continue
-                    for m in range(len(url_list_2)):
+
+                    lll = range(0,len(url_list_2),4)
+                    for m in lll:
                         count=0
                         while 1:
                             count=count+1
@@ -232,7 +235,23 @@ if __name__=='__main__':
                                 fl.flush()
                                 break
                             try:
-                                download_pic(url_list_2[m],album_name,m+1,local_path)
+                                threads = []
+                                t1 = threading.Thread(target=download_pic,args=(url_list_2[m],album_name,m+1,local_path))
+                                threads.append(t1)
+                                if m+1<len(url_list_2):
+                                    t2 = threading.Thread(target=download_pic,args=(url_list_2[m+1],album_name,m+2,local_path))
+                                    threads.append(t2)
+                                    if m+2<len(url_list_2):
+                                        t3 = threading.Thread(target=download_pic,args=(url_list_2[m+2],album_name,m+3,local_path))
+                                        threads.append(t3)
+                                        if m+3<len(url_list_2):
+                                            t4 = threading.Thread(target=download_pic,args=(url_list_2[m+3],album_name,m+4,local_path))
+                                            threads.append(t4)
+                                for t in threads:
+                                    t.setDaemon(True)
+                                    t.start()
+                                t.join()
+                                #download_pic(url_list_2[m],album_name,m+1,local_path)
                                 break
                             except:
                                 continue
