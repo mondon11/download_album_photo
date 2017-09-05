@@ -88,23 +88,36 @@ def get_pic_list(url):
 '''
 下载并保存图片
 '''
-def download_pic(url,album_name,pic_num,local_path):
-    local_filename = album_name
-    r = conn.get(url, stream=True,timeout=5)
-    s =local_filename.encode('utf-8').replace('/',' ').decode('utf-8')
-    '''
-    if not os.path.exists(local_path+s):
-        os.makedirs(local_path+s)
-    else:
-        return s
-    '''
-    with open(local_path+s+'/'+str(pic_num)+'.jpg', 'wb') as f:
-        for chunk in r.iter_content(chunk_size=1024):
-            if chunk: # filter out keep-alive new chunks
-                f.write(chunk)
-                f.flush()
-        f.close()
-    return s
+def download_pic(url,album_name,pic_num,local_path,fl):
+    count=0
+    while 1:
+        count=count+1
+        if count>10:
+            time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+            fl.write(time_now+' : '+url+' $Connect-error'+'\n')
+            fl.flush()
+            break
+        try:
+            resp = conn.get(url, stream=True,timeout=5)
+            break
+        except:
+            continue
+
+    try:
+        if resp.status_code==200:
+            s =album_name.encode('utf-8').replace('/',' ').decode('utf-8')
+            with open(local_path+s+'/'+str(pic_num)+'.jpg', 'wb') as f:
+                for chunk in resp.iter_content(chunk_size=1024):
+                    if chunk:
+                        f.write(chunk)
+                        f.flush()
+                f.close()
+    except:
+        time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+        fl.write(time_now+' : '+url+' $Download-uncompleted'+'\n')
+        fl.flush()
+
+    return count
 
 '''
 主程序流程:
@@ -118,7 +131,9 @@ if __name__=='__main__':
     local_path='c:/Users/mondon/Desktop/test_mv/' #自定义保存路径
     url_base='https://www.aisinei.com/' #网站基址
     log='error_log.txt' #记录访问时抛错的网址
+
     conn=requests.session() #创建session 传递cookie
+
     with open(local_path+log,'a') as fl:
         count=0
         url_list=[]
@@ -126,17 +141,15 @@ if __name__=='__main__':
             count=count+1
             if count>10:
                 time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-                fl.write(time_now+' : '+url_base+'\n')
+                fl.write(time_now+' : '+url_base+' $Connect-error'+'\n')
                 fl.flush()
                 break
             try:
-                url_list=get_area_list(url_base)
+                url_list=get_area_list(url_base) #获得不同杂志的入口网址列表
                 break
             except:
                 continue
-        '''
-        url_list=get_area_list(url_base)
-        '''
+
         for i in range(len(url_list)):
             count=0
             url=''
@@ -144,10 +157,10 @@ if __name__=='__main__':
                 count=count+1
                 if count>10:
                     time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-                    fl.write(time_now+' : '+url_list[i]+'\n')
+                    fl.write(time_now+' : '+url_list[i]+' $Connect-error'+'\n')
                     fl.flush()
                     break
-                try:
+                try: #获得无图模式网址，为下面获得总页数做准备
                     if get_noPicMode(url_list[i]):
                         url=get_noPicMode(url_list[i])
                     else:
@@ -155,29 +168,22 @@ if __name__=='__main__':
                     break
                 except:
                     continue
-            '''
-            if get_noPicMode(url_list[i]):
-                url=get_noPicMode(url_list[i])
-            else:
-                url=url_list[i]
-            '''
-            count=0
             page=0
-            while 1:
-                count=count+1
-                if count>10:
-                    time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-                    fl.write(time_now+' : '+url+'\n')
-                    fl.flush()
-                    break
-                try:
-                    page=get_page_num(url)
-                    break
-                except:
-                    continue
-            '''
-            page=get_page_num(url)
-            '''
+            if url:
+                count=0
+                while 1:
+                    count=count+1
+                    if count>10:
+                        time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
+                        fl.write(time_now+' : '+url+' $Connect-error'+'\n')
+                        fl.flush()
+                        break
+                    try:
+                        page=get_page_num(url) #获得某一杂志的总网页数
+                        break
+                    except:
+                        continue
+
             for j in range(page):
                 url=url_list[i].replace('1',str(j+1))
                 count=0
@@ -186,79 +192,60 @@ if __name__=='__main__':
                     count=count+1
                     if count>10:
                         time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-                        fl.write(time_now+' : '+url+'\n')
+                        fl.write(time_now+' : '+url+' $Connect-error'+'\n')
                         fl.flush()
                         break
                     try:
-                        url_list_1=get_album_list(url)
+                        url_list_1=get_album_list(url) #获得某一网页的写真集网址列表
                         break
                     except:
                         continue
-                '''
-                url_list_1=get_album_list(url)
-                '''
+
                 for k in range(len(url_list_1)):
                     count=0
                     url_list_2=[]
+                    album_name=''
                     while 1:
                         count=count+1
                         if count>10:
                             time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-                            fl.write(time_now+' : '+url_list_1[k]+'\n')
+                            fl.write(time_now+' : '+url_list_1[k]+' $Connect-error'+'\n')
                             fl.flush()
                             break
                         try:
-                            url_list_2,album_name=get_pic_list(url_list_1[k])
+                            url_list_2,album_name=get_pic_list(url_list_1[k]) #获得该写真集的所有图片地址和写真集名字
                             break
                         except:
                             continue
+                    if album_name: #若本地不存在该写真集，则创建文件夹准备存储
+                        print '准备下载: '+album_name.encode('utf-8')
+                        s =album_name.encode('utf-8').replace('/',' ').decode('utf-8')
+                        if not os.path.exists(local_path+s):
+                            os.makedirs(local_path+s)
+                        else:
+                            print ' '+album_name.encode('utf-8')+' 已存在'
+                            continue
 
-                    '''
-                    url_list_2,album_name=get_pic_list(url_list_1[k])
-                    '''
-                    print '准备下载: '+album_name.encode('utf-8')
-                    s =album_name.encode('utf-8').replace('/',' ').decode('utf-8')
-                    if not os.path.exists(local_path+s):
-                        os.makedirs(local_path+s)
-                    else:
-                        print ' '+album_name.encode('utf-8')+' 已存在'
-                        continue
-
-                    lll = range(0,len(url_list_2),4)
-                    for m in lll:
-                        count=0
-                        while 1:
-                            count=count+1
-                            if count>10:
-                                time_now=time.strftime('%Y-%m-%d %H:%M:%S',time.localtime(time.time()))
-                                fl.write(time_now+' : '+url_list_2[m]+'\n')
-                                fl.flush()
-                                break
-                            try:
-                                threads = []
-                                t1 = threading.Thread(target=download_pic,args=(url_list_2[m],album_name,m+1,local_path))
-                                threads.append(t1)
-                                if m+1<len(url_list_2):
-                                    t2 = threading.Thread(target=download_pic,args=(url_list_2[m+1],album_name,m+2,local_path))
-                                    threads.append(t2)
-                                    if m+2<len(url_list_2):
-                                        t3 = threading.Thread(target=download_pic,args=(url_list_2[m+2],album_name,m+3,local_path))
-                                        threads.append(t3)
-                                        if m+3<len(url_list_2):
-                                            t4 = threading.Thread(target=download_pic,args=(url_list_2[m+3],album_name,m+4,local_path))
-                                            threads.append(t4)
-                                for t in threads:
-                                    t.setDaemon(True)
-                                    t.start()
-                                t.join()
-                                #download_pic(url_list_2[m],album_name,m+1,local_path)
-                                break
-                            except:
-                                continue
-                        '''
-                        download_pic(url_list_2[m],album_name,m+1,local_path)
-                        '''
+                    for m in range(0,len(url_list_2),4): #四线程下载图片
+                        threads = []
+                        t1 = threading.Thread(target=download_pic,args=(url_list_2[m],album_name,m+1,local_path,fl))
+                        threads.append(t1)
+                        if m+1<len(url_list_2):
+                            t2 = threading.Thread(target=download_pic,args=(url_list_2[m+1],album_name,m+2,local_path,fl))
+                            threads.append(t2)
+                            if m+2<len(url_list_2):
+                                t3 = threading.Thread(target=download_pic,args=(url_list_2[m+2],album_name,m+3,local_path,fl))
+                                threads.append(t3)
+                                if m+3<len(url_list_2):
+                                    t4 = threading.Thread(target=download_pic,args=(url_list_2[m+3],album_name,m+4,local_path,fl))
+                                    threads.append(t4)
+                        for t in threads:
+                            t.setDaemon(True)
+                            t.start()
+                        for t in threads:
+                            t.join(30) #30s超时时间
                         print m+1
+
         fl.close()
 
 
